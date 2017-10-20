@@ -1,0 +1,23 @@
+a.js-landing-edit, a.js-landing-save {
+	display: block;
+	font-size: 9px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	background-color: #fff;
+	color: #000;
+	border: 1px #000 solid;
+	padding: 0 2px 0 2px;
+	opacity: 0.5;
+}
+
+a.js-landing-save {
+	display: none;
+}
+
+textarea.js-landing-area {
+	clear: both;
+	border: none;
+	width: 100%;
+	display: none;
+}
