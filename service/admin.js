@@ -8,48 +8,50 @@ function listen(evnt, elem, func) {
 }
 
 function LandingAdmin() {
-	/*var edit_link = document.getElementsByClassName("js-landing-edit");
+
+	var edit_link = document.getElementsByClassName("js-landing-edit");
 	for (var i=0; i<edit_link.length; i++) {
-		edit_link[i].addEventListener('click', function(e) {
-		    alert(e.currentTarget);
+		/*edit_link[i].addEventListener('click', function(e) {
+		    e.target.classList.toggle('hide');
+		});*/
+		listen("click", edit_link[i], function(e) {
+		    e.target.classList.add('js-landing-hide');
+		    e.target.parentElement.querySelector('span.js-landing-span').classList.add('js-landing-hide');
+		    e.target.parentElement.querySelector('textarea.js-landing-area').classList.remove('js-landing-hide');
+		    e.target.parentElement.querySelector('a.js-landing-save').classList.remove('js-landing-hide');
 		});
-		//listen("click", edit_link[i], LandingAdminClick());
-	}*/
-	$("a.js-landing-edit").click(function() {
-	  var parent = $(this).parent();
-	  parent.find("span.js-landing-span").hide();
-	  parent.find("textarea.js-landing-area").show();
-	  parent.find("a.js-landing-edit").hide();
-	  parent.find("a.js-landing-save").show();
-	});
-	$("a.js-landing-save").click(function() {
-	  var parent = $(this).parent();
-	  var html = parent.find("textarea.js-landing-area").val();
-	  var file = parent.find("span.js-landing-span").data("file");
+	}
 
-	  var data = {};
-	  data[file] = html;
-	  // construct an HTTP request
-	  var xhr = new XMLHttpRequest();
-	  xhr.open('POST', 'admin/save', true);
-	  xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+	var save_link = document.getElementsByClassName("js-landing-save");
+	for (var i=0; i<edit_link.length; i++) {
+		listen("click", save_link[i], function(e) {
+			var html = e.target.parentElement.querySelector('textarea.js-landing-area').value;
+			var file = e.target.parentElement.querySelector('span.js-landing-span').dataset.file;
 
-	  // send the collected data as JSON
-	  xhr.send(JSON.stringify(data));
+			var data = {};
+			data[file] = html;
+			// construct an HTTP request
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', 'admin/save', true);
+			xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
 
-	  xhr.onloadend = function () {
-	    //alert("saved!")
-	  };
+			// send the collected data as JSON
+			xhr.send(JSON.stringify(data));
 
-	  parent.find("textarea.js-landing-area").hide();
-	  parent.find("span.js-landing-span").html(html).show();
-	  parent.find("a.js-landing-save").hide();
-	  parent.find("a.js-landing-edit").show();
-	});
+			xhr.onloadend = function () {
+			  //alert("saved!")
+			};
+
+
+		    e.target.parentElement.querySelector('span.js-landing-span').innerHTML = html;
+
+		    e.target.classList.add('js-landing-hide');
+		    e.target.parentElement.querySelector('textarea.js-landing-area').classList.add('js-landing-hide');
+		    e.target.parentElement.querySelector('span.js-landing-span').classList.remove('js-landing-hide');
+		    e.target.parentElement.querySelector('a.js-landing-edit').classList.remove('js-landing-hide');
+		});
+	}
+
 }
-
-/*function LandingAdminClick() {
-	alert("Click");
-}*/
 
 listen("load", window, LandingAdmin());

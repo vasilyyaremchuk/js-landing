@@ -11,7 +11,7 @@ a.js-landing-edit, a.js-landing-save {
 	opacity: 0.5;
 }
 
-a.js-landing-save {
+.js-landing-hide, a.js-landing-hide {
 	display: none;
 }
 
@@ -19,5 +19,5 @@ textarea.js-landing-area {
 	clear: both;
 	border: none;
 	width: 100%;
-	display: none;
+	/*display: none;*/
 }

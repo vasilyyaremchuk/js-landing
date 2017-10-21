@@ -120,7 +120,7 @@ server.on("request", function (request, response) {
 					  //console.log(match);
 					  if (admin_mode == true) {
 					  	var file = match.substring(2, match.length-2);
-					  	return ('<span class="js-landing-span" data-file="' + file + '">' + content_data[group] + '</span><textarea class="js-landing-area">' + content_data[group] + '</textarea><a href="#" class="js-landing-edit">edit</a><a href="#" class="js-landing-save">save</a>') || match;
+					  	return ('<span class="js-landing-span" data-file="' + file + '">' + content_data[group] + '</span><textarea class="js-landing-area js-landing-hide">' + content_data[group] + '</textarea><a href="#" class="js-landing-edit">edit</a><a href="#" class="js-landing-save js-landing-hide">save</a>') || match;
 					  }
 					  else {
 					  	return content_data[group] || match;
