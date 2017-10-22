@@ -1,188 +1,166 @@
-var http = require('http'); // API HTTP-сервера
-var fs = require('fs'); // Для работы с локальными файлами
-var server = new http.Server(); // Создать новый HTTP-сервер
-server.listen(8000); // Прослушивать порт 8000.
+const http = require('http'); // API HTTP-server
+const fs = require('fs'); // Access to local files
+const urlConst = require('url');
 
+const server = new http.Server(); // create a new HTTP-server
+server.listen(8000); // port 8000.
 
 // site content tokens
-var content_data = {};
-fs.readdir('content/', function(err, items) {
-	for (var i=0; i<items.length; i++) {
-		var file_content = fs.readFileSync('content/' + items[i]);
-		var filename = items[i];
-		switch(filename.substring(filename.lastIndexOf(".")+1)) { 
-			case "html":
-			case "htm":
-			case "txt": 
-				content_data[filename] = file_content.toString();
-			break;
-			case "jpg":
-			case "png":
-			case "svg":
-				content_data[filename] = '<img src="content/' + filename + '" />';
-			break;
-			default: 
-				content_data[filename] = '<a href="content/' + filename + '" target="_blank">' + filename + '</a>'; 
-			break;
-		}	
-		content_data[filename] = file_content.toString();
-	}
+const contentData = {};
+fs.readdir('content/', (err, items) => {
+  for (let i = 0; i < items.length; i += 1) {
+    const filename = items[i];
+    const fileContent = fs.readFileSync(`content/${filename}`);
+    switch (filename.substring(filename.lastIndexOf('.') + 1)) {
+      case 'html':
+      case 'htm':
+      case 'txt':
+        contentData[filename] = fileContent.toString();
+        break;
+      case 'jpg':
+      case 'png':
+      case 'svg':
+        contentData[filename] = `<img src="content/${filename}" />`;
+        break;
+      default:
+        contentData[filename] = `<a href="content/${filename}" target="_blank">${filename}</a>`;
+        break;
+    }
+    contentData[filename] = fileContent.toString();
+  }
 });
 
-server.on("request", function (request, response) {
-	var url = require('url').parse(request.url);
-	var admin_mode = false;
-	var filename = url.pathname.substring(1); 
-	if (url.pathname === "/" || url.pathname === "" || url.pathname === "/admin" || url.pathname === "/admin/save") {
-		var filename = "index.html";
-		if (url.pathname === "/admin" || url.pathname === "/admin/save") {
-			admin_mode = true;
-		}
-	}
+server.on('request', (request, response) => {
+  const url = urlConst.parse(request.url);
+  let adminMode = false;
+  let filename = url.pathname.substring(1);
+  if (url.pathname === '/' || url.pathname === '' || url.pathname === '/admin' || url.pathname === '/admin/save') {
+    filename = 'index.html';
+    if (url.pathname === '/admin' || url.pathname === '/admin/save') {
+      adminMode = true;
+    }
+  }
 
-	var type;
-	switch(filename.substring(filename.lastIndexOf(".")+1)) { 
-		case "html":
-		case "htm": 
-			type = "text/html; charset=UTF-8"; 
-		break;
-		case "js": 
-			type = "application/JavaScript; charset=UTF-8"; 
-		break;
-		case "css": 
-			type = "text/css; charset=UTF-8"; 
-		break;
-		//case "txt" : 
-		//	type = "text/plain; charset=UTF-8"; 
-		//break;
-		//case "manifest": 
-		//	type = "text/cache-manifest; charset=UTF-8"; 
-		//break;
-		default: 
-			type = "application/octet-stream"; 
-		break;
-	}
-	//console.log(filename);
-	//process.chdir("markup");
-	/*var content = fs.readFileSync("markup/" + filename);
-	response.writeHead(200, 
-		{"Content-Type": type});
-	response.write(content); 
-	response.end(); */
-	var source = "markup/";
-	var initial_path = url.pathname.substring(0, 9);
-	if (initial_path === "/service/" || initial_path ==="/content/") {
-		source = "";		
-	}
+  let type;
+  switch (filename.substring(filename.lastIndexOf('.') + 1)) {
+    case 'html':
+    case 'htm':
+      type = 'text/html; charset=UTF-8';
+      break;
+    case 'js':
+      type = 'application/JavaScript; charset=UTF-8';
+      break;
+    case 'css':
+      type = 'text/css; charset=UTF-8';
+      break;
+    case 'txt':
+      type = 'text/plain; charset=UTF-8';
+      break;
+    // case "manifest":
+    //  type = "text/cache-manifest; charset=UTF-8";
+    //  break;
+    default:
+      type = 'application/octet-stream';
+      break;
+  }
 
-	//console.log("Read file: " + source + filename);
-	if(url.pathname === "/admin/save") {
-		request.setEncoding('utf8');
+  let source = 'markup/';
+  const initialPath = url.pathname.substring(0, 9);
+  if (initialPath === '/service/' || initialPath === '/content/') {
+    source = '';
+  }
 
-	    request.on('data', function (chunk) {
-	    	var to_save = JSON.parse(chunk);
-	    	for (var prop in to_save) {
-			  fs.writeFile("content/" + prop, to_save[prop], function(err) {
-				    if(err) {
-				        return console.log(err);
-				    }
-				    console.log("The file was saved!");
-				});
-			}
-	    });
-		response.writeHead(200, 
-			{"Content-Type": type});
-		response.write("Done!"); 
-		response.end(); 
-	}
-	else {
-		fs.readFile(source + filename, function(err, content) {
-			if (err) { 
-				console.log(filename + " not found!");
-				response.writeHead(404, { 
-					"Content-Type": "text/plain; charset=UTF-8"});
-				response.write(err.message); 
-				response.end(); 
-			}
-			else { 
-				if (filename == 'index.html') {
-					var regex = /\{{2}\s*((\w|\.)+)\s*\}{2}/g;
+  // console.log("Read file: " + source + filename);
+  if (url.pathname === '/admin/save') {
+    request.setEncoding('utf8');
+    request.on('data', (chunk) => {
+      const toSave = JSON.parse(chunk);
+      const firstKey = Object.keys(toSave)[0];
+      fs.writeFile(`content/${firstKey}`, toSave[firstKey], (err) => {
+        if (err) {
+          // console.log(err);
+        }
+        // console.log("The file was saved!");
+      });
+    });
+    response.writeHead(200, { 'Content-Type': type });
+    response.write('Done!');
+    response.end();
+  } else {
+    fs.readFile(source + filename, (err, content) => {
+      if (err) {
+        // console.log(filename + " not found!");
+        response.writeHead(404, { 'Content-Type': 'text/plain; charset=UTF-8' });
+        response.write(err.message);
+        response.end();
+      } else {
+        let fileContent = content;
+        if (filename === 'index.html') {
+          const regex = /\{{2}\s*((\w|\.)+)\s*\}{2}/g;
 
-					//console.log(content_data);
-					var result = content.toString().replace(regex, function(match, group) {
-					  //console.log(group)
-					  /*var path = group.split('.');
-					  var current = data;
-					  while(path.length && current){
-					    current = current[path.shift()];
-					  }*/
-					  //console.log(current);
-					  //console.log(match);
-					  if (admin_mode == true) {
-					  	var file = match.substring(2, match.length-2);
-					  	return ('<span class="js-landing-span" data-file="' + file + '">' + content_data[group] + '</span><textarea class="js-landing-area js-landing-hide">' + content_data[group] + '</textarea><a href="#" class="js-landing-edit">edit</a><a href="#" class="js-landing-save js-landing-hide">save</a>') || match;
-					  }
-					  else {
-					  	return content_data[group] || match;
-					  }
-					});
+          // console.log(contentData);
+          const result = content.toString().replace(regex, (match, group) => {
+            let matchResult;
+            if (adminMode === true) {
+              const file = match.substring(2, match.length - 2);
+              matchResult = (`<span class="js-landing-span" data-file="${file}">${contentData[group]}</span><textarea class="js-landing-area js-landing-hide">${contentData[group]}</textarea><a href="#" class="js-landing-edit">edit</a><a href="#" class="js-landing-save js-landing-hide">save</a>`) || match;
+            } else {
+              matchResult = contentData[group] || match;
+            }
+            return matchResult;
+          });
 
-					content = result;
-				}
-				if (admin_mode == true) {
-					var auth = request.headers['authorization'];  // auth is in base64(username:password)  so we need to decode the base64
-	        		console.log("Authorization Header is: ", auth);
+          fileContent = result;
+        }
+        if (adminMode === true) {
+          const auth = request.headers.authorization;
+          // auth is in base64(username:password)  so we need to decode the base64
+          // console.log('Authorization Header is: ', auth);
 
-			        if(!auth) {     // No Authorization header was passed in so it's the first time the browser hit us
+          if (!auth) {
+            // No Authorization header was passed in so it's the first time the browser hit us
+            response.statusCode = 401;
+            response.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+            response.end('<html><body>Protected Admin Area.</body></html>');
+          } else if (auth) {
+            // The Authorization was passed in so now we validate it
+            const tmp = auth.split(' ');
+            // Split on a space, the original auth looks like
+            // "Basic Y2hhcmxlczoxMjM0NQ==" and we need the 2nd part
 
-		                // Sending a 401 will require authentication, we need to send the 'WWW-Authenticate' to tell them the sort of authentication to use
-		                // Basic auth is quite literally the easiest and least secure, it simply gives back  base64( username + ":" + password ) from the browser
-		                response.statusCode = 401;
-		                response.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+            const buf = Buffer.from(tmp[1], 'base64');
+            // create a buffer and tell it the data coming in is base64
+            const plainAuth = buf.toString();
+            // read it back out as a string
 
-		                response.end('<html><body>Protected Admin Area.</body></html>');
-			        }
+            // console.log("Decoded Authorization ", plainAuth);
 
-			        else if(auth) {    // The Authorization was passed in so now we validate it
+            // At this point plainAuth = "username:password"
 
-		                var tmp = auth.split(' ');   // Split on a space, the original auth looks like  "Basic Y2hhcmxlczoxMjM0NQ==" and we need the 2nd part
+            const creds = plainAuth.split(':'); // split on a ':'
+            const username = creds[0];
+            const password = creds[1];
 
-		                var buf = new Buffer(tmp[1], 'base64'); // create a buffer and tell it the data coming in is base64
-		                var plain_auth = buf.toString();        // read it back out as a string
-
-		                console.log("Decoded Authorization ", plain_auth);
-
-		                // At this point plain_auth = "username:password"
-
-		                var creds = plain_auth.split(':');      // split on a ':'
-		                var username = creds[0];
-		                var password = creds[1];
-
-		                if((username == 'admin') && (password == 'admin')) {   // Is the username/password correct?
-							response.writeHead(200, 
-								{"Content-Type": type});
-							content = content.replace('</body>', '<script src="service/admin.js"></script></body>');
-							content = content.replace('</head>', '<link href="service/admin.css" rel="stylesheet"></head>');
-							response.write(content); 
-							response.end(); 
-		                }
-		                else {
-	                        response.statusCode = 401; // Force them to retry authentication
-	                        response.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
-
-	                        // response.statusCode = 403;   // or alternatively just reject them altogether with a 403 Forbidden
-
-	                        response.end('<html><body>Access Denied!</body></html>');
-		                }
-			        }
-				}
-				else {
-					response.writeHead(200, 
-						{"Content-Type": type});
-					response.write(content); 
-					response.end();
-				}
-			}
-		});
-	}
+            if ((username === 'admin') && (password === 'admin')) { // Is the username/password correct?
+              response.writeHead(200, { 'Content-Type': type });
+              fileContent = fileContent.replace('</body>', '<script src="service/admin.js"></script></body>');
+              fileContent = fileContent.replace('</head>', '<link href="service/admin.css" rel="stylesheet"></head>');
+              response.write(fileContent);
+              response.end();
+            } else {
+              response.statusCode = 401; // Force them to retry authentication
+              response.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+              // response.statusCode = 403;
+              // or alternatively just reject them altogether with a 403 Forbidden
+              response.end('<html><body>Access Denied!</body></html>');
+            }
+          }
+        } else {
+          response.writeHead(200, { 'Content-Type': type });
+          response.write(fileContent);
+          response.end();
+        }
+      }
+    });
+  }
 });
