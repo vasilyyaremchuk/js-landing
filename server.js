@@ -1,6 +1,6 @@
 const http = require('http'); // API HTTP-server
 const fs = require('fs'); // Access to local files
-const urlConst = require('url');
+const url = require('url');
 
 const server = new http.Server(); // create a new HTTP-server
 server.listen(8000); // port 8000.
@@ -31,12 +31,12 @@ fs.readdir('content/', (err, items) => {
 });
 
 server.on('request', (request, response) => {
-  const url = urlConst.parse(request.url);
+  const appUrl = url.parse(request.url);
   let adminMode = false;
-  let filename = url.pathname.substring(1);
-  if (url.pathname === '/' || url.pathname === '' || url.pathname === '/admin' || url.pathname === '/admin/save') {
+  let filename = appUrl.pathname.substring(1);
+  if (appUrl.pathname === '/' || appUrl.pathname === '' || appUrl.pathname === '/admin' || appUrl.pathname === '/admin/save') {
     filename = 'index.html';
-    if (url.pathname === '/admin' || url.pathname === '/admin/save') {
+    if (appUrl.pathname === '/admin' || appUrl.pathname === '/admin/save') {
       adminMode = true;
     }
   }
@@ -48,7 +48,7 @@ server.on('request', (request, response) => {
       type = 'text/html; charset=UTF-8';
       break;
     case 'js':
-      type = 'application/JavaScript; charset=UTF-8';
+      type = 'application/javascript; charset=UTF-8';
       break;
     case 'css':
       type = 'text/css; charset=UTF-8';
@@ -65,13 +65,13 @@ server.on('request', (request, response) => {
   }
 
   let source = 'markup/';
-  const initialPath = url.pathname.substring(0, 9);
+  const initialPath = appUrl.pathname.substring(0, 9);
   if (initialPath === '/service/' || initialPath === '/content/') {
     source = '';
   }
 
   // console.log("Read file: " + source + filename);
-  if (url.pathname === '/admin/save') {
+  if (appUrl.pathname === '/admin/save') {
     request.setEncoding('utf8');
     request.on('data', (chunk) => {
       const toSave = JSON.parse(chunk);
