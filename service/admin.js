@@ -31,9 +31,10 @@ function LandingAdmin() {
 			var data = {};
 			data[file] = html;
 			// construct an HTTP request
+
 			var xhr = new XMLHttpRequest();
-			xhr.open('POST', 'admin/save', true);
-			xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+			xhr.open('POST', 'admin/update', true);
+			xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
 
 			// send the collected data as JSON
 			xhr.send(JSON.stringify(data));
