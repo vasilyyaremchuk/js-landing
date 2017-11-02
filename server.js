@@ -27,28 +27,32 @@ const auth = function baseAuth(req, res, next) {
 
 // site content tokens
 const contentData = {};
-fs.readdir('content/', (err, items) => {
-  for (let i = 0; i < items.length; i += 1) {
-    const filename = items[i];
-    const fileContent = fs.readFileSync(`content/${filename}`);
-    switch (filename.substring(filename.lastIndexOf('.') + 1)) {
-      case 'html':
-      case 'htm':
-      case 'txt':
-        contentData[filename] = fileContent.toString();
-        break;
-      case 'jpg':
-      case 'png':
-      case 'svg':
-        contentData[filename] = `<img src="content/${filename}" />`;
-        break;
-      default:
-        contentData[filename] = `<a href="content/${filename}" target="_blank">${filename}</a>`;
-        break;
+function getContentData() {
+  fs.readdir('content/', (err, items) => {
+    for (let i = 0; i < items.length; i += 1) {
+      const filename = items[i];
+      const fileContent = fs.readFileSync(`content/${filename}`);
+      switch (filename.substring(filename.lastIndexOf('.') + 1)) {
+        case 'html':
+        case 'htm':
+        case 'txt':
+          contentData[filename] = fileContent.toString();
+          break;
+        case 'jpg':
+        case 'png':
+        case 'svg':
+          contentData[filename] = `<img src="content/${filename}" />`;
+          break;
+        default:
+          contentData[filename] = `<a href="content/${filename}" target="_blank">${filename}</a>`;
+          break;
+      }
+      contentData[filename] = fileContent.toString();
     }
-    contentData[filename] = fileContent.toString();
-  }
-});
+  });
+}
+
+getContentData();
 
 function indexApp(res, adminMode = false) {
   const source = 'themes/first/paragraphs/';
@@ -72,7 +76,7 @@ function indexApp(res, adminMode = false) {
       result = result.replace('</body>', '<script src="service/admin.js"></script></body>');
       result = result.replace('</head>', '<link href="service/admin.css" rel="stylesheet"></head>');
     }
-    res.send(200, result);
+    res.status(200).send(result);
   });
 }
 
@@ -85,7 +89,8 @@ update.post('/', auth, (req, res) => {
       if (err) {
         res.send(`Error: ${err}`); // console.log(err);
       } else {
-        res.send(`Saved: ${firstKey}`);
+        getContentData();
+        res.send(`The fragment ${firstKey} was saved!`);
       }
     });
   });
