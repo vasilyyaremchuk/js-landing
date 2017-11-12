@@ -1,10 +1,12 @@
 const fs = require('fs'); // Access to local files
 const express = require('express');
+const fileUpload = require('express-fileupload');
 const basicAuth = require('basic-auth');
 
 const app = express(); // the main app
 const admin = express(); // the sub app
-const update = express(); // the sub-sub app
+const update = express(); // the sub app
+const upload = express(); // the sub app
 
 // Authorization
 const auth = function baseAuth(req, res, next) {
@@ -47,7 +49,6 @@ function getContentData() {
           contentData[filename] = `<a href="content/${filename}" target="_blank">${filename}</a>`;
           break;
       }
-      contentData[filename] = fileContent.toString();
     }
   });
 }
@@ -66,7 +67,23 @@ function indexApp(res, adminMode = false) {
       result = content.toString().replace(regex, (match, group) => {
         if (adminMode === true) {
           const file = match.substring(2, match.length - 2);
-          return (`<span class="js-landing-span" data-file="${file}">${contentData[group]}</span><textarea class="js-landing-area js-landing-hide">${contentData[group]}</textarea><a href="#" class="js-landing-edit">edit</a><a href="#" class="js-landing-save js-landing-hide">save</a>`) || match;
+          let adminForm;
+          switch (file.substring(file.lastIndexOf('.') + 1)) {
+            case 'html':
+            case 'htm':
+            case 'txt':
+              adminForm = `<textarea class="js-landing-text js-landing-area js-landing-hide">${contentData[group]}</textarea>`;
+              break;
+            case 'jpg':
+            case 'png':
+            case 'svg':
+              adminForm = `<div class="js-landing-area js-landing-hide"><img src="content/${file}" style="height: 50px;" /><form enctype="multipart/form-data" name="${file}"  action="admin/upload" method="post"><input class="js-landing-file" type="file"></form></div>`;
+              break;
+            default:
+              adminForm = `<div class="js-landing-area js-landing-hide"><a href="content/${filename}" target="_blank">${filename}</a><input class="js-landing-file" type="file"></div>`;
+              break;
+          }
+          return (`<span class="js-landing-span" data-file="${file}">${contentData[group]}</span>${adminForm}<a href="#" class="js-landing-edit">edit</a><a href="#" class="js-landing-save js-landing-hide">save</a>`) || match;
         }
         return contentData[group] || match;
       });
@@ -80,10 +97,14 @@ function indexApp(res, adminMode = false) {
   });
 }
 
+// update.use(fileUpload());
+
 update.post('/', auth, (req, res) => {
   req.setEncoding('utf8');
   req.on('data', (chunk) => {
     const toSave = JSON.parse(chunk);
+    console.log(req.files);
+    console.log(toSave);
     const firstKey = Object.keys(toSave)[0];
     fs.writeFile(`content/${firstKey}`, toSave[firstKey], (err) => {
       if (err) {
@@ -96,6 +117,23 @@ update.post('/', auth, (req, res) => {
   });
 });
 
+upload.use(fileUpload());
+
+upload.post('/', auth, (req, res) => {
+  if (!req.files) {
+    res.status(400).send('No files were uploaded.');
+  }
+  const firstKey = Object.keys(req.files)[0];
+  const sample = req.files[firstKey];
+  sample.mv(`content/${sample.name}`, (err) => {
+    if (err) {
+      res.status(500).send(err);
+    }
+    res.send('File uploaded!');
+  });
+});
+
+
 admin.get('/', auth, (req, res) => {
   indexApp(res, true);
 });
@@ -106,6 +144,7 @@ app.get('/', (req, res) => {
 
 app.use('/admin', admin); // mount the sub app
 app.use('/admin/update', update); // mount the sub-sub app
+app.use('/admin/upload', upload); // mount the sub-sub app
 app.use('/service', express.static('service'));
 app.use('/content', express.static('content'));
 app.use(express.static('themes/first/static'));
