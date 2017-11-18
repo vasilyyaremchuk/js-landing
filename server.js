@@ -77,7 +77,7 @@ function indexApp(res, adminMode = false) {
             case 'jpg':
             case 'png':
             case 'svg':
-              adminForm = `<div class="js-landing-area js-landing-hide"><img src="content/${file}" style="height: 50px;" /><form enctype="multipart/form-data" name="${file}"  action="admin/upload" method="post"><input class="js-landing-file" type="file"></form></div>`;
+              adminForm = `<div class="js-landing-area js-landing-hide"><img src="content/${file}" height="50px" /><form enctype="multipart/form-data" name="${file}" action="admin/upload" method="post"><input class="js-landing-file" type="file"></form></div>`;
               break;
             default:
               adminForm = `<div class="js-landing-area js-landing-hide"><a href="content/${filename}" target="_blank">${filename}</a><input class="js-landing-file" type="file"></div>`;
