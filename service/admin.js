@@ -10,6 +10,8 @@ function saveLinkClick(saveLink) {
   listen('click', saveLink, (e) => {
     let data = {};
     let html = e.target.parentElement.querySelector('span.js-landing-span').innerHTML;
+    let updateFlag = false;
+    const updateData = {};
     // construct an HTTP request
     const xhr = new XMLHttpRequest();
     const fileName = e.target.parentElement.querySelector('span.js-landing-span').dataset.file;
@@ -26,6 +28,9 @@ function saveLinkClick(saveLink) {
       myFormData.append(fileName, fileInput.files[0]);
       if (fileInput.files[0] !== undefined) {
         const newFileName = fileInput.files[0].name;
+        updateFlag = true;
+        updateData.old = e.target.parentElement.querySelector('span.js-landing-span').dataset.file;
+        updateData.new = newFileName;
         e.target.parentElement.querySelector('span.js-landing-span').dataset.file = newFileName;
         e.target.parentElement.querySelector('.js-landing-span img').src = `content/${newFileName}`;
         e.target.parentElement.querySelector('.js-landing-area form').name = newFileName;
@@ -42,9 +47,27 @@ function saveLinkClick(saveLink) {
     xhr.onloadend = function onLoadEnd(message) {
       if (message.target.status === 200 && message.target.responseText.indexOf('Error') === -1) {
         e.target.parentElement.querySelector('span.js-landing-span').innerHTML = `<div class="alert alert-success">${message.target.responseText}</div>`;
+
+        const xhrReplace = new XMLHttpRequest();
+        if (updateFlag === true) {
+          xhrReplace.open('POST', 'admin/replace', true);
+          xhrReplace.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+          // send the collected data as JSON
+          xhrReplace.send(JSON.stringify(updateData));
+        }
+
         setTimeout(() => {
           e.target.parentElement.querySelector('span.js-landing-span').innerHTML = html;
         }, 2000);
+
+        xhrReplace.onloadend = function onLoadEndReplace(messageReplace) {
+          if (messageReplace.target.status === 200 && messageReplace.target.responseText.indexOf('Error') === -1) {
+            e.target.parentElement.querySelector('span.js-landing-span').innerHTML = `<div class="alert alert-success">${message.target.responseText}</div>`;
+            setTimeout(() => {
+              e.target.parentElement.querySelector('span.js-landing-span').innerHTML = html;
+            }, 2000);
+          }
+        };
       }
     };
     e.target.classList.add('js-landing-hide');

@@ -6,6 +6,7 @@ const basicAuth = require('basic-auth');
 const app = express(); // the main app
 const admin = express(); // the sub app
 const update = express(); // the sub app
+const replace = express(); // the sub app
 const upload = express(); // the sub app
 
 // Authorization
@@ -56,7 +57,7 @@ function getContentData() {
 getContentData();
 
 function indexApp(res, adminMode = false) {
-  const source = 'themes/first/paragraphs/';
+  const source = 'content/';
   const filename = 'index.html';
   fs.readFile(source + filename, (err, content) => {
     let result;
@@ -97,14 +98,10 @@ function indexApp(res, adminMode = false) {
   });
 }
 
-// update.use(fileUpload());
-
 update.post('/', auth, (req, res) => {
   req.setEncoding('utf8');
   req.on('data', (chunk) => {
     const toSave = JSON.parse(chunk);
-    console.log(req.files);
-    console.log(toSave);
     const firstKey = Object.keys(toSave)[0];
     fs.writeFile(`content/${firstKey}`, toSave[firstKey], (err) => {
       if (err) {
@@ -113,6 +110,32 @@ update.post('/', auth, (req, res) => {
         getContentData();
         res.send(`The fragment ${firstKey} was saved!`);
       }
+    });
+  });
+});
+
+replace.post('/', auth, (req, res) => {
+  req.setEncoding('utf8');
+  req.on('data', (chunk) => {
+    const toSave = JSON.parse(chunk);
+    const source = 'content/';
+    const filename = 'index.html';
+    fs.readFile(source + filename, (err, content) => {
+      let result;
+      if (err) {
+        result = err.message;
+      } else {
+        const str = content.toString();
+        const replaceResult = str.replace(toSave.old, toSave.new);
+        fs.writeFile('content/index.html', replaceResult, (werr) => {
+          if (werr) {
+            result = werr.message;
+          } else {
+            result = 'index.html was updated!';
+          }
+        });
+      }
+      res.status(200).send(result);
     });
   });
 });
@@ -145,6 +168,7 @@ app.get('/', (req, res) => {
 app.use('/admin', admin); // mount the sub app
 app.use('/admin/update', update); // mount the sub-sub app
 app.use('/admin/upload', upload); // mount the sub-sub app
+app.use('/admin/replace', replace); // mount the sub-sub app
 app.use('/service', express.static('service'));
 app.use('/content', express.static('content'));
 app.use(express.static('themes/first/static'));
