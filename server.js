@@ -1,3 +1,4 @@
+const LandingConf = require('./landing-conf'); // config
 const fs = require('fs'); // Access to local files
 const express = require('express');
 const fileUpload = require('express-fileupload');
@@ -162,7 +163,13 @@ admin.get('/', auth, (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  indexApp(res);
+  if (typeof LandingConf.theme !== 'undefined') {
+    indexApp(res);
+  } else {
+    fs.readFile('service/install.html', (err, content) => {
+      res.status(200).send(content.toString());
+    });
+  }
 });
 
 app.use('/admin', admin); // mount the sub app
@@ -171,6 +178,10 @@ app.use('/admin/upload', upload); // mount the sub-sub app
 app.use('/admin/replace', replace); // mount the sub-sub app
 app.use('/service', express.static('service'));
 app.use('/content', express.static('content'));
-app.use(express.static('themes/first/static'));
+if (typeof LandingConf.theme !== 'undefined') {
+  app.use(express.static(`themes/${LandingConf.theme}/static`));
+} else {
+  app.use(express.static('themes/default/static'));
+}
 
 app.listen(8000);
