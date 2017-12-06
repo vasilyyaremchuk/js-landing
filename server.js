@@ -1,12 +1,14 @@
-const LandingConf = require('./landing-conf'); // config
-const fs = require('fs'); // Access to local files
+const fs = require('fs-extra'); // Access to local files
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const basicAuth = require('basic-auth');
+const bodyParser = require('body-parser');
+const LandingConf = fs.existsSync('./landing-conf.js') ? require('./landing-conf') : {};
 
 const app = express(); // the main app
 const admin = express(); // the sub app
 const update = express(); // the sub app
+const install = express(); // the sub app
 const replace = express(); // the sub app
 const upload = express(); // the sub app
 
@@ -33,23 +35,25 @@ const auth = function baseAuth(req, res, next) {
 const contentData = {};
 function getContentData() {
   fs.readdir('content/', (err, items) => {
-    for (let i = 0; i < items.length; i += 1) {
-      const filename = items[i];
-      const fileContent = fs.readFileSync(`content/${filename}`);
-      switch (filename.substring(filename.lastIndexOf('.') + 1)) {
-        case 'html':
-        case 'htm':
-        case 'txt':
-          contentData[filename] = fileContent.toString();
-          break;
-        case 'jpg':
-        case 'png':
-        case 'svg':
-          contentData[filename] = `<img src="content/${filename}" />`;
-          break;
-        default:
-          contentData[filename] = `<a href="content/${filename}" target="_blank">${filename}</a>`;
-          break;
+    if (items !== undefined) {
+      for (let i = 0; i < items.length; i += 1) {
+        const filename = items[i];
+        const fileContent = fs.readFileSync(`content/${filename}`);
+        switch (filename.substring(filename.lastIndexOf('.') + 1)) {
+          case 'html':
+          case 'htm':
+          case 'txt':
+            contentData[filename] = fileContent.toString();
+            break;
+          case 'jpg':
+          case 'png':
+          case 'svg':
+            contentData[filename] = `<img src="content/${filename}" />`;
+            break;
+          default:
+            contentData[filename] = `<a href="content/${filename}" target="_blank">${filename}</a>`;
+            break;
+        }
       }
     }
   });
@@ -157,6 +161,30 @@ upload.post('/', auth, (req, res) => {
   });
 });
 
+install.use(bodyParser.urlencoded({ extended: true }));
+install.post('/', (req, res) => {
+  const configFile = `module.exports = {\n  login: '${req.body.login}',\n  pass: '${req.body.password}',\n  theme: '${req.body.theme}',\n};`;
+  fs.writeFile('landing-conf.js', configFile, (werr) => {
+    if (werr) {
+      res.status(500).send(werr.message);
+    } else {
+      fs.copy(`themes/${req.body.theme}/content`, 'content', (err) => {
+        if (err) {
+          res.status(500).send(err.message);
+        } else {
+          res.writeHead(302, {
+            Location: '/',
+          });
+          getContentData();
+          LandingConf.login = req.body.login;
+          LandingConf.pass = req.body.password;
+          LandingConf.theme = req.body.theme;
+          res.end();
+        }
+      });
+    }
+  });
+});
 
 admin.get('/', auth, (req, res) => {
   indexApp(res, true);
@@ -176,6 +204,7 @@ app.use('/admin', admin); // mount the sub app
 app.use('/admin/update', update); // mount the sub-sub app
 app.use('/admin/upload', upload); // mount the sub-sub app
 app.use('/admin/replace', replace); // mount the sub-sub app
+app.use('/install', install); // mount the sub app
 app.use('/service', express.static('service'));
 app.use('/content', express.static('content'));
 if (typeof LandingConf.theme !== 'undefined') {
