@@ -179,6 +179,7 @@ install.post('/', (req, res) => {
           LandingConf.login = req.body.login;
           LandingConf.pass = req.body.password;
           LandingConf.theme = req.body.theme;
+          app.use(express.static(`themes/${LandingConf.theme}/static`));
           res.end();
         }
       });
